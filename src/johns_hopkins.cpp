@@ -1,7 +1,8 @@
 #include "johns_hopkins.h"
 #include "data_parser.h"
-#include <iostream>
+
 #include <curl/curl.h>
+#include <iostream>
 
 struct memoryblob {
     char *memory;
@@ -55,4 +56,28 @@ std::string john_hopkins_data_to_file(const std::string &src_file, const std::st
     std::ofstream file(filename);
     file << delimitedData;
     return delimitedData;
+}
+
+void
+update_from_john_hopkins_if_required(const std::filesystem::path &src_url, const std::filesystem::path &trg_path,
+                                     const std::vector<std::string> &src_files) {
+    std::for_each(src_files.begin(), src_files.end(), [src_url, trg_path](const auto &file_name) {
+        std::filesystem::path source{src_url};
+        std::filesystem::path target{trg_path};
+        source.append(file_name);
+        target.append(file_name);
+
+        if (std::filesystem::exists(target)) {
+            std::filesystem::file_time_type file_time{last_write_time(target)};
+            double difference_sec = difftime(time(nullptr),
+                                             decltype(file_time)::clock::to_time_t(file_time)); //seconds to day
+            if (difference_sec < (24 * 3600)) {
+                return;
+            }
+            std::cerr << "Data is over one day old, reloading from John Hopkins." << std::endl;
+        } else {
+            std::cerr << "Downloading " << file_name << " from John Hopkins." << std::endl;
+        }
+        john_hopkins_data_to_file(source.string(), target.string());
+    });
 }
