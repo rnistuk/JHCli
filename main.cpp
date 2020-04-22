@@ -9,41 +9,45 @@
 #include "src/region.h"
 
 
-
 void
-update_from_john_hopkins_if_required(const std::filesystem::path& src_url, const std::filesystem::path& trg_path, const std::vector<std::string>& src_files) {
-    std::for_each(src_files.begin(), src_files.end(),[src_url,trg_path](const auto& file_name) {
+update_from_john_hopkins_if_required(const std::filesystem::path &src_url, const std::filesystem::path &trg_path,
+                                     const std::vector<std::string> &src_files) {
+    std::for_each(src_files.begin(), src_files.end(), [src_url, trg_path](const auto &file_name) {
         std::filesystem::path source{src_url};
         std::filesystem::path target{trg_path};
         source.append(file_name);
         target.append(file_name);
 
         if (std::filesystem::exists(target)) {
-            std::filesystem::file_time_type file_time {last_write_time(target)};
-            double difference_sec = difftime(time(nullptr), decltype(file_time)::clock::to_time_t(file_time)); //seconds to day
-            if (difference_sec < (24*3600)) {
+            std::filesystem::file_time_type file_time{last_write_time(target)};
+            double difference_sec = difftime(time(nullptr),
+                                             decltype(file_time)::clock::to_time_t(file_time)); //seconds to day
+            if (difference_sec < (24 * 3600)) {
                 return;
             }
             std::cerr << "Data is over one day old, reloading from John Hopkins." << std::endl;
         } else {
             std::cerr << "Downloading " << file_name << " from John Hopkins." << std::endl;
         }
-        john_hopkins_data_to_file(source.string(), target.string() );
+        john_hopkins_data_to_file(source.string(), target.string());
     });
 }
 
 int
 main(int argc, char *argv[]) {
     // Set up source paths
-    std::filesystem::path src_url{"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"};
-    std::vector<std::string> src_files{"time_series_covid19_confirmed_global.csv", "time_series_covid19_deaths_global.csv",  "time_series_covid19_recovered_global.csv" };
+    std::filesystem::path src_url{
+            "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/"};
+    std::vector<std::string> src_files{"time_series_covid19_confirmed_global.csv",
+                                       "time_series_covid19_deaths_global.csv",
+                                       "time_series_covid19_recovered_global.csv"};
 
     // set up target directory
     std::filesystem::path app_path{argv[0]};
     std::filesystem::path trg_path{std::filesystem::temp_directory_path()};
     trg_path.append(app_path.filename().c_str());
 
-    if(!std::filesystem::exists(trg_path)) {
+    if (!std::filesystem::exists(trg_path)) {
         std::filesystem::create_directories(trg_path);
     }
 
@@ -51,7 +55,7 @@ main(int argc, char *argv[]) {
 
     // load files to datastructures
     std::map<std::string, std::vector<region_data>> covid19_data;
-    std::for_each(src_files.begin(), src_files.end(), [&covid19_data, trg_path](const auto& filename) {
+    std::for_each(src_files.begin(), src_files.end(), [&covid19_data, trg_path](const auto &filename) {
         auto filepath{trg_path};
         filepath.append(filename);
         std::ifstream covid_data_stream(filepath.string());
@@ -63,7 +67,7 @@ main(int argc, char *argv[]) {
         covid19_data[filename] = regions;
     });
 
-    for (const auto& p : covid19_data) {
+    for (const auto &p : covid19_data) {
         std::cout << p.first << " : " << p.second.size() << "\n";
 
         std::vector<region_data> canada;
