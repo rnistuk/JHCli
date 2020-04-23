@@ -9,7 +9,8 @@ struct memoryblob {
     size_t size;
 };
 
-static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, void *userp) {
+static size_t
+write_memory_callback(void *contents, size_t size, size_t nmemb, void *userp) {
     size_t realsize = size * nmemb;
     struct memoryblob *mem = (struct memoryblob *) userp;
 
@@ -25,7 +26,8 @@ static size_t write_memory_callback(void *contents, size_t size, size_t nmemb, v
     return realsize;
 }
 
-std::string download_covid_19_data(const std::string &url) {
+std::string
+download_covid_19_data(const std::string &url) {
     std::string data;
     if (!curl_global_init(CURL_GLOBAL_DEFAULT)) {
         CURLcode res;
@@ -49,7 +51,8 @@ std::string download_covid_19_data(const std::string &url) {
     return data;
 }
 
-std::string john_hopkins_data_to_file(const std::string &src_file, const std::string &filename) {
+std::string
+john_hopkins_data_to_file(const std::string &src_file, const std::string &filename) {
     const auto csvdata{download_covid_19_data(src_file)};
     std::string delimitedData{re_delimit_to_pipes(csvdata)};
 
@@ -68,10 +71,7 @@ update_from_john_hopkins_if_required(const std::filesystem::path &src_url, const
         target.append(file_name);
 
         if (std::filesystem::exists(target)) {
-            std::filesystem::file_time_type file_time{last_write_time(target)};
-            double difference_sec = difftime(time(nullptr),
-                                             decltype(file_time)::clock::to_time_t(file_time)); //seconds to day
-            if (difference_sec < (24 * 3600)) {
+            if (file_age_seconds(target) < (24 * 3600)) {
                 return;
             }
             std::cerr << "Data is over one day old, reloading from John Hopkins." << std::endl;

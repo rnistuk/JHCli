@@ -98,11 +98,11 @@ data_line_to_parts(const std::string &l) {
     return std::make_pair(info, infections);
 }
 
-std::vector<region_data>
+regions
 parse_regions(const std::vector<std::string> &titles, data_lines lines) {
     std::vector<tm> dates{dates_from_titles(titles)};
 
-    std::vector<region_data> regions;
+    regions regions;
     for (const auto &l : lines) {
         auto parts = data_line_to_parts(l);
 

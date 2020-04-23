@@ -17,3 +17,5 @@ struct region_data {
 };
 
 typedef std::deque<std::string> data_lines;
+typedef std::vector<std::string> region_names;
+typedef std::vector<region_data> regions;

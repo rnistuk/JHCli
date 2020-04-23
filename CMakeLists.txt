@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(CURL_LIBRARY "-lcurl")
 find_package(CURL REQUIRED)
-add_executable(jhcli main.cpp src/johns_hopkins.cpp src/johns_hopkins.h src/data_parser.cpp src/data_parser.h src/region.h)
+add_executable(jhcli main.cpp src/johns_hopkins.cpp src/johns_hopkins.h src/data_parser.cpp src/data_parser.h src/region.h src/filesystem_helpers.cpp src/filesystem_helpers.h)
 #add_executable (curl-demo convert.cpp)
 include_directories(${CURL_INCLUDE_DIR})
 target_link_libraries(jhcli ${CURL_LIBRARIES})
