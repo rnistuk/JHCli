@@ -1,10 +1,12 @@
 #include "src/johns_hopkins.h"
 #include "src/data_parser.h"
 #include "src/filesystem_helpers.h"
+#include "src/command_handler.h"
 #include <iostream>
 #include <map>
 #include <filesystem>
 #include <set>
+#include <sstream>
 
 namespace {
     const char *JOHNS_HOPKINS_DATA_URL{
@@ -22,37 +24,73 @@ namespace {
         return trg_path;
     }
 
-    template <class T>
-    void
-    print_strings(const T &c) {
-        std::for_each(c.begin(), c.end(), [](const auto &t){std::cout << t << "\n";});
-    }
+
 }
 
+
+
+
+
 int
-process_arguments(int argc, char *argv[], std::map<std::string, std::vector<region_data>> covid19_data) {
+process_arguments(int argc, char *argv[], std::map<std::string, regions>& covid19_data) {
     if (argc > 1) {
         const std::string cmd{argv[1]};
         if (cmd == "provinces" || cmd == "states") {
-            std::set<std::string> provinces;
-            std::for_each(covid19_data.begin(), covid19_data.end(), [&provinces](const auto &p) {
-                std::for_each(p.second.begin(), p.second.end(), [&provinces](const auto &r){
-                    if (!r.province.empty()) {
-                        provinces.emplace(r.province);
-                    }
-                });
-            });
-            print_strings(provinces);
+            handle_provinces(covid19_data);
         } else if (cmd == "countries" || cmd == "regions") {
-            std::set<std::string> countries;
-            std::for_each(covid19_data.begin(), covid19_data.end(), [&countries](const auto &p) {
-                std::for_each(p.second.begin(), p.second.end(), [&countries](const auto &r){
-                    if (!r.country.empty()) {
-                        countries.emplace(r.country);
-                    }
-                });
+            handle_countries(covid19_data);
+        } else if (cmd=="data") {
+            std::string province;
+            std::string country;
+            std::map<std::string, std::string> arguments;
+            for (int i{2}; i<argc;++i) {
+                auto arg = parse_argument(argv[i]);
+                if (arg.first=="-country") {
+                    country = arg.second;
+                } else if (arg.first == "-province") {
+                    province = arg.second;
+                }
+            }
+
+            std::map<std::string, regions> filtered_covid19_data;
+            std::for_each(covid19_data.begin(), covid19_data.end(), [&filtered_covid19_data, &covid19_data, &country, &province ](const auto &d) {
+                std::vector<region_data> regions;
+                std::copy_if(
+                        d.second.begin(),
+                        d.second.end(),
+                        std::back_inserter(regions),
+                        [country, province](const auto& r){
+                            if (r.province=="British Columbia" )
+                                std::cout << "BC" << std::endl;
+                            return r.country == country && r.province == province;
+                        });
+                if (!regions.empty()) {
+                    filtered_covid19_data[d.first] = regions;
+                }
             });
-            print_strings(countries);
+
+            std::map<time_t,std::vector<size_t>> combined;
+            for(const auto &p : filtered_covid19_data) {
+                for (const auto &d : p.second[0].data) {
+                    tm t{d.time};
+                    combined[mktime(&t)].emplace_back(d.people);
+                }
+            }
+
+            for (const auto &p : combined) {
+                std::cout << tm_to_string(localtime ( &p.first )) << ", ";
+                for (const auto &c : p.second) {
+                    std::cout << c << ", ";
+                }
+                std::cout << std::endl;
+            }
+
+
+
+
+
+
+
         }
         std::cout << std::endl;
     }

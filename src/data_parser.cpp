@@ -10,6 +10,14 @@ string_to_date(const std::string &date) {
     return tm;
 }
 
+std::string
+tm_to_string(tm *const t) {
+    char p[128];
+    strftime (p, 128, "%D", t);
+    return std::string(p);
+}
+
+
 std::vector<tm>
 dates_from_titles(const std::vector<std::string> &titles) {
     std::vector<tm> dates;
@@ -117,4 +125,35 @@ parse_regions(const std::vector<std::string> &titles, data_lines lines) {
         regions.emplace_back(rd);
     }
     return regions;
+}
+
+template <class T>
+T ltrim(const T& s, const T& d="\"") {
+    auto start = s.find_first_not_of(d);
+    return start == std::string::npos ? s : s.substr(start);
+}
+
+template <class T>
+T rtrim(const T& s, const T& d="\"") {
+    auto end = s.find_last_not_of(d);
+    return end == std::string::npos ? s : s.substr(0,end+1);
+}
+
+std::pair<std::string, std::string>
+parse_argument(const std::string &a) {
+    std::pair<std::string, std::string> r;
+    std::stringstream ss(a);
+    while (ss) {
+        std::string s;
+        std::getline(ss, s, '=');
+        s = rtrim(ltrim(s));
+
+        if (r.first.empty()) {
+            r.first = s;
+        } else {
+            r.second = s;
+            break;
+        }
+    }
+    return r;
 }
